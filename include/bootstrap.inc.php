@@ -77,10 +77,14 @@ require_once dirname(__FILE__).'/../classes/XmlExporter.class.php';
 require_once dirname(__FILE__).'/../classes/AbstractPageDispatcher.class.php';
 require_once dirname(__FILE__).'/../classes/HitlistDispatcher.class.php';
 
-
-$BASE_URI = 'http://plugins.studip.de/';
-$BASE_PATH = '/home/splugin/wwwroot/marketplace/';
-$TMP_PATH = '/home/splugin/phptmp/';
+$BASE_URI = sprintf('http%s://%s%s%s/',
+                    @$_SERVER['HTTPS'] ? 's' : '',
+                    $_SERVER['SERVER_NAME'],
+                    ((@$_SERVER['HTTPS'] && $_SERVER['SERVER_PORT'] != 443) ||
+                     (!@$_SERVER['HTTPS'] && $_SERVER['SERVER_PORT'] != 80)) ? ':' . $_SERVER['SERVER_PORT'] : '',
+                    rtrim(dirname($_SERVER['REQUEST_URI']), '/'));
+$BASE_PATH = realpath(dirname(__FILE__) . '/..') . '/';
+$TMP_PATH = '/tmp';
 $FACTORY = new Flexi_TemplateFactory(dirname(__FILE__).'/../templates');
 $IMAGES_URL = $BASE_URI . 'images';
 $DYNAMIC_CONTENT_URL = $BASE_URI . 'content';
