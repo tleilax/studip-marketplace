@@ -82,7 +82,7 @@ $BASE_URI = sprintf('http%s://%s%s%s/',
                     $_SERVER['SERVER_NAME'],
                     ((@$_SERVER['HTTPS'] && $_SERVER['SERVER_PORT'] != 443) ||
                      (!@$_SERVER['HTTPS'] && $_SERVER['SERVER_PORT'] != 80)) ? ':' . $_SERVER['SERVER_PORT'] : '',
-                    rtrim(dirname($_SERVER['REQUEST_URI']), '/'));
+                    rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'));
 $BASE_PATH = realpath(dirname(__FILE__) . '/..') . '/';
 $TMP_PATH = '/tmp';
 $FACTORY = new Flexi_TemplateFactory(dirname(__FILE__).'/../templates');
