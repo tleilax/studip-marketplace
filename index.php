@@ -81,7 +81,6 @@ if ($dispatch == 'do_login' || $dispatch == 'loginfromdev') {
 }
 
 include_once 'templates/header.php';
-require_once "include/includes.inc.php";
 
 if ($dispatch == "logoutdone") {
 	$GUI->showLogout();

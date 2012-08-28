@@ -40,7 +40,6 @@ var removeCommentsItem = function (item, rid) {
 }
 // ]]>
 </script>
-<LINK REL="stylesheet" HREF="<?=$css_uri?>/tagcloud.css" TYPE="text/css" />
 
 <!-- Wrapper Starts -->
 <div id="wrapper">
