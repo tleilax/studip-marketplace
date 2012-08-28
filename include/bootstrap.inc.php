@@ -20,6 +20,8 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // +---------------------------------------------------------------------------+
 
+ini_set('date.timezone', 'Europe/Berlin');
+
 $_never_globalize_request_params = array('msg','BASE_URI','BASE_PATH','CONVERT_PATH','DYNAMIC_CONTENT_URL','DYNAMIC_CONTENT_PATH','REFRESH','TMP_PATH','SERVER_NAME');
 foreach($_never_globalize_request_params as $one_param){
         if (isset($_REQUEST[$one_param])){
@@ -30,7 +32,7 @@ foreach($_never_globalize_request_params as $one_param){
 require_once dirname(__FILE__).'/../classes/Session.class.php';
 require_once dirname(__FILE__).'/language.inc.php';
 
-$SUPPORT_ADDRESS = 'marketplace@zmml.uni-bremen.de';
+$SUPPORT_ADDRESS = 'tleilax+marketplace@gmail.com';
 $SERVER_NAME = 'plugins.studip.de';
 $REFRESH = 60; // Minuten
 Session::get()->startSession();
@@ -45,7 +47,7 @@ $_language_path = 'de';
 
 $_language_domain = "marketplace";
 
-include '/home/splugin/dbpass.inc';
+include 'include/dbpass.inc.php';
 require_once dirname(__FILE__).'/visual.inc.php';
 require_once dirname(__FILE__).'/../lib/CssClassSwitcher.inc.php';
 require_once dirname(__FILE__).'/../lib/MessageBox.class.php';
