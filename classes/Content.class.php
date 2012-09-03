@@ -29,7 +29,7 @@ class Content
     private $content_txt = '';
     private $key = '';
 
-    public function __construct($id) {
+    public function __construct($id = null) {
         if ($id !== null) {
             $this->load($id);
         }
