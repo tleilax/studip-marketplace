@@ -34,7 +34,7 @@ require_once dirname(__FILE__).'/language.inc.php';
 
 $SUPPORT_ADDRESS = 'tleilax+marketplace@gmail.com';
 $SERVER_NAME = 'plugins.studip.de';
-$REFRESH = 60; // Minuten
+$REFRESH = 0; // Minuten
 Session::get()->startSession();
 if (!$_SESSION['msg_type'])
         $_SESSION['msg_type'] = 'info';
@@ -47,7 +47,7 @@ $_language_path = 'de';
 
 $_language_domain = "marketplace";
 
-include 'include/dbpass.inc.php';
+include 'include/config.inc.php';
 require_once dirname(__FILE__).'/visual.inc.php';
 require_once dirname(__FILE__).'/../lib/CssClassSwitcher.inc.php';
 require_once dirname(__FILE__).'/../lib/MessageBox.class.php';
@@ -55,27 +55,13 @@ require_once dirname(__FILE__).'/../lib/flexi/flexi.php';
 require_once dirname(__FILE__).'/../lib/DBManager.class.php';
 require_once dirname(__FILE__).'/../lib/Request.class.php';
 require_once dirname(__FILE__).'/../lib/Avatar.class.php';
-require_once dirname(__FILE__).'/../classes/CryptMP.class.php';
-require_once dirname(__FILE__).'/../classes/User.class.php';
-require_once dirname(__FILE__).'/../classes/Perm.class.php';
-require_once dirname(__FILE__).'/../classes/UserManagement.class.php';
-require_once dirname(__FILE__).'/../classes/GUIRenderer.class.php';
-require_once dirname(__FILE__).'/../classes/MailRenderer.class.php';
-require_once dirname(__FILE__).'/../classes/MPDBM.class.php';
-require_once dirname(__FILE__).'/../classes/Auth.class.php';
-require_once dirname(__FILE__).'/../classes/Plugin.class.php';
-require_once dirname(__FILE__).'/../classes/Release.class.php';
-require_once dirname(__FILE__).'/../classes/MFile.class.php';
-require_once dirname(__FILE__).'/../classes/Downloader.class.php';
-require_once dirname(__FILE__).'/../classes/Content.class.php';
-require_once dirname(__FILE__).'/../classes/Screenshot.class.php';
-require_once dirname(__FILE__).'/../classes/Comment.class.php';
-require_once dirname(__FILE__).'/../classes/Generator.class.php';
-require_once dirname(__FILE__).'/../classes/History.class.php';
-require_once dirname(__FILE__).'/../classes/FeedGenerator.class.php';
-require_once dirname(__FILE__).'/../classes/XmlExporter.class.php';
-require_once dirname(__FILE__).'/../classes/AbstractPageDispatcher.class.php';
-require_once dirname(__FILE__).'/../classes/HitlistDispatcher.class.php';
+
+spl_autoload_register(function ($class) {
+    $filename = sprintf('%s/../classes/%s.class.php',
+                        dirname(__FILE__),
+                        $class);
+    @include $filename;
+});
 
 $BASE_URI = sprintf('http%s://%s%s%s/',
                     @$_SERVER['HTTPS'] ? 's' : '',
@@ -90,9 +76,6 @@ $IMAGES_URL = $BASE_URI . 'images';
 $DYNAMIC_CONTENT_URL = $BASE_URI . 'content';
 $DYNAMIC_CONTENT_PATH = $BASE_PATH . 'content';
 $CONVERT_PATH = "/home/splugin/wwwroot/convert";
-$WSDL_ENDPOINT = "http://develop.studip.de/studip/plugins_packages/ZMML/MarketplacePlugin/soap.php?wsdl";
-$SOAP_API_KEY = "";
-$REMOTE_LOGIN_KEY = "";
 
 $ZIP_USE_INTERNAL = false;
 $ZIP_PATH = "/home/splugin/wwwroot/zip";

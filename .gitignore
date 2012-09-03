@@ -1,0 +1,6 @@
+ssl/*
+!ssl/readme.txt
+content/releases/*
+content/screenshots/*
+content/tmp/*
+content/user/*

@@ -1,10 +1,12 @@
 <?php
 /**
-* @author               Jan Kulmann <jankul@zmml.uni-bremen.de>
-*/
+ * @author Jan-Hendrik Willms <tleilax+studip@gmail.com>
+ * @author Jan Kulmann <jankul@zmml.uni-bremen.de>
+ */
 
 // +---------------------------------------------------------------------------+
 // Copyright (C) 2012 Jan Kulmann <jankul@zmml.uni-bremen.de>
+// Copyright (C) 2012 Jan-Hendrik Willms <tleilax+studip@gmail.com>
 // +---------------------------------------------------------------------------+
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,79 +22,98 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // +---------------------------------------------------------------------------+
 
-class Comment {
+class Comment
+{
+    private $comment_text = '';
+    private $comment_id = '';
+    private $range_id = '';
+    private $user_id = '';
+    private $mkdate = 0;
 
-	private $comment_text = '';
-	private $comment_id = '';
-	private $range_id = '';
-	private $user_id = '';
-	private $mkdate = 0;
+    public function __construct($id = null)
+    {
+        if ($id !== null) {
+            $this->load($id);
+        }
+    }
 
-	public function __construct() {
+    public function getCommentId()
+    {
+        return $this->comment_id;
+    }
 
-	}
+    public function getRangeId()
+    {
+        return $this->range_id;
+    }
 
-	public function getCommentId() {
-		return $this->comment_id;
-	}
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
 
-	public function getRangeId() {
-		return $this->range_id;
-	}
+    public function getCommentText()
+    {
+        return $this->comment_text;
+    }
 
-	public function getUserId() {
-		return $this->user_id;
-	}
+    public function getMkdate()
+    {
+        return $this->mkdate;
+    }
 
-	public function getCommentText() {
-		return stripslashes($this->comment_text);
-	}
+    public function setRangeId($s)
+    {
+        $this->range_id = $s;
+        return $this;
+    }
 
-	public function getMkdate() {
-		return $this->mkdate;
-	}
+    public function setUserId($s)
+    {
+        $this->user_id = $s;
+        return $this;
+    }
 
-	public function setRangeId($s) {
-		$this->range_id = $s;
-		return $this;
-	}
+    public function setCommentText($s)
+    {
+        $this->comment_text = $s;
+        return $this;
+    }
 
-	public function setUserId($s) {
-		$this->user_id = $s;
-		return $this;
-	}
+    public function load($cid)
+    {
+        $query = "SELECT comment_id, range_id, user_id, comment_text, mkdate FROM comments WHERE comment_id = ?";
+        $statement = DBManager::get()->prepare($query);
+        $statement->execute(array($cid));
+        $r = $statement->fetch(PDO::FETCH_ASSOC);
 
-	public function setCommentText($s) {
-		$this->comment_text = $s;
-		return $this;
-	}
+        $this->comment_id   = $r['comment_id'];
+        $this->range_id     = $r['range_id'];
+        $this->user_id      = $r['user_id'];
+        $this->comment_text = $r['comment_text'];
+        $this->mkdate       = $r['mkdate'];
 
-	public function load($cid) {
-		$r = DBManager::get()->query(sprintf("SELECT * FROM comments WHERE comment_id='%s'",$cid))->fetchAll();
-		$this->comment_id = $r[0]['comment_id'];
-		$this->range_id = $r[0]['range_id'];
-		$this->user_id = $r[0]['user_id'];
-		$this->comment_text = $r[0]['comment_text'];
-		$this->mkdate = $r[0]['mkdate'];
-		return TRUE;
-	}
+        return true;
+    }
 
-	public function save() {
-		if (!$this->comment_id) {
-			$this->comment_id = md5(uniqid(time().$this->range_id));
-			$this->mkdate = time();
-			$stmt = DBManager::get()->prepare("INSERT INTO comments (comment_id, range_id, user_id, comment_text, mkdate) VALUES (?,?,?,?,?)");
-			$stmt->execute(array($this->comment_id, $this->range_id, $this->user_id, addslashes($this->comment_text), $this->mkdate));
-		} else {
-			$stmt = DBManager::get()->prepare("UPDATE comments SET comment_text=? WHERE comment_id=?");
-			$stmt->execute(array(addslashes($this->comment_text), $this->comment_id));
-		}
-	}
+    public function save() {
+        if (!$this->comment_id) {
+            $this->comment_id = md5(uniqid(time() . $this->range_id, true));
+            $query = "INSERT INTO comments (comment_id, range_id, user_id, comment_text, mkdate)
+                      VALUES (?, ?, ?, ?, UNIX_TIMESTAMP())";
+            $stmt = DBManager::get()->prepare($query);
+            $stmt->execute(array($this->comment_id, $this->range_id, $this->user_id, $this->comment_text, $this->mkdate));
+        } else {
+            $query = "UPDATE comments SET comment_text = ? WHERE comment_id = ?";
+            $stmt = DBManager::get()->prepare($query);
+            $stmt->execute(array($this->comment_text, $this->comment_id));
+        }
+    }
 
-	public function delete() {
-		DBManager::get()->query(sprintf("DELETE FROM comments WHERE comment_id='%s'",$this->comment_id));
-	}
-
+    public function delete()
+    {
+        $query = "DELETE FROM comments WHERE comment_id = ?";
+        $statement = DBManager::get()->prepare($query);
+        $statement->execute(array($this->comment_id));
+    }
 }
-
-?>

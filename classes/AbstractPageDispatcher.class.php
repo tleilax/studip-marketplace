@@ -1,10 +1,12 @@
 <?php
 /**
-* @author               Jan Kulmann <jankul@zmml.uni-bremen.de>
-*/
+ * @author Jan-Hendrik Willms <tleilax+studip@gmail.com>
+ * @author Jan Kulmann <jankul@zmml.uni-bremen.de>
+ */
 
 // +---------------------------------------------------------------------------+
 // Copyright (C) 2012 Jan Kulmann <jankul@zmml.uni-bremen.de>
+// Copyright (C) 2012 Jan-Hendrik Willms <tleilax+studip@gmail.com>
 // +---------------------------------------------------------------------------+
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,31 +22,32 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // +---------------------------------------------------------------------------+
 
-
 abstract class AbstractPageDispatcher
 {
-	/**
-	 * Should return the maximum number of available pages
-	 */
-	public abstract function getPageCount();
-	/**
-	 * Should return the appropriate title of given page
-	 * 
-	 * @param integer $num
-	 */
-	public abstract function getPageTitle($num);
-	/**
-	 * Should return the appropriate content of given page
-	 * 
-	 * @param integer $num
-	 */
-	public abstract function getPageContent($num);
-	/**
-	 * Should return a unique seperator-sign for dispatching ajax-request
-	 */
-	public function getDispatherSign()
-	{
-		return "+.+";
-	}
+    /**
+     * Should return the maximum number of available pages
+     */
+    public abstract function getPageCount();
+
+    /**
+     * Should return the appropriate title of given page
+     * 
+     * @param integer $num
+     */
+    public abstract function getPageTitle($num);
+
+    /**
+     * Should return the appropriate content of given page
+     * 
+     * @param integer $num
+     */
+    public abstract function getPageContent($num);
+
+    /**
+     * Should return a unique seperator-sign for dispatching ajax-request
+     */
+    public function getDispatherSign()
+    {
+        return '+.+';
+    }
 }
-?>

@@ -23,227 +23,227 @@
 
 class MPDBM {
 
-	private $error_str = '';
-	private $tmp_path = '';
-	private $authenticated = FALSE;
+    private $error_str = '';
+    private $tmp_path = '';
+    private $authenticated = FALSE;
 
-	function __construct() {
-		$this->tmp_path = $GLOBALS['DYNAMIC_CONTENT_PATH'].'/tmp';
-		$this->authenticated = $GLOBALS['AUTH']->getAuthenticatedUser();
-	}
+    function __construct() {
+        $this->tmp_path = $GLOBALS['DYNAMIC_CONTENT_PATH'].'/tmp';
+        $this->authenticated = $GLOBALS['AUTH']->getAuthenticatedUser();
+    }
 
-	public function getErrorStr() {
-		return $this->error_str;
-	}
+    public function getErrorStr() {
+        return $this->error_str;
+    }
 
-	public function setErrorStr($s = '') {
-		$this->error_str = $s;
-	}
+    public function setErrorStr($s = '') {
+        $this->error_str = $s;
+    }
 
-	public function disableCurrentTitleScreen($plugin_id) {
-		DBManager::get()->query(sprintf("UPDATE screenshots SET title_screen=0 WHERE plugin_id='%s'",$plugin_id));
-	}
+    public function disableCurrentTitleScreen($plugin_id) {
+        DBManager::get()->query(sprintf("UPDATE screenshots SET title_screen=0 WHERE plugin_id='%s'",$plugin_id));
+    }
 
-	function getAllUsers() {
-		$ret = array();
-		$rr = DBManager::get()->query(sprintf("SELECT * FROM users ORDER BY nachname, vorname, username"))->fetchAll();
-		foreach ($rr as $r) {
-			$u = new User();
-			$u->load($r['user_id']);
-			array_push($ret, $u);
-		}
-		return $ret;
-	}
+    function getAllUsers() {
+        $ret = array();
+        $rr = DBManager::get()->query(sprintf("SELECT * FROM users ORDER BY nachname, vorname, username"))->fetchAll();
+        foreach ($rr as $r) {
+            $u = new User();
+            $u->load($r['user_id']);
+            array_push($ret, $u);
+        }
+        return $ret;
+    }
 
-	function getCategories() {
-		$db = DBManager::get();
-		$r = $db->query(sprintf("SELECT c.*, COUNT(p.plugin_id) count_cat FROM categories c LEFT JOIN categories_plugins cp USING (category_id) LEFT JOIN plugins p ON (cp.plugin_id=p.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=%d))) GROUP BY c.category_id ORDER BY c.name", ($this->authenticated ? 1 : 0)))->fetchAll();
-		return $r;
-	}
+    function getCategories() {
+        $db = DBManager::get();
+        $r = $db->query(sprintf("SELECT c.*, COUNT(p.plugin_id) count_cat FROM categories c LEFT JOIN categories_plugins cp USING (category_id) LEFT JOIN plugins p ON (cp.plugin_id=p.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=%d))) GROUP BY c.category_id ORDER BY c.name", ($this->authenticated ? 1 : 0)))->fetchAll();
+        return $r;
+    }
 
-	function getCategory($category_id) {
-		$db = DBManager::get();
-		$r = $db->query(sprintf("SELECT c.* FROM categories c WHERE c.category_id='%s'",$category_id))->fetchAll();
-		return $r[0];
-	}
+    function getCategory($category_id) {
+        $db = DBManager::get();
+        $r = $db->query(sprintf("SELECT c.* FROM categories c WHERE c.category_id='%s'",$category_id))->fetchAll();
+        return $r[0];
+    }
 
-	function getAllApprovedPlugins() {
-		$ret = array();
-		$db = DBManager::get();
-		$rr = $db->query("SELECT p.* FROM plugins p WHERE p.approved=1 ORDER BY p.name")->fetchAll();
-		foreach ($rr as $r) {
-			$p = new Plugin();
-			$p->load($r['plugin_id']);
-			array_push($ret, $p);
-		}
-		return $ret;
-	}
+    function getAllApprovedPlugins() {
+        $ret = array();
+        $db = DBManager::get();
+        $rr = $db->query("SELECT p.* FROM plugins p WHERE p.approved=1 ORDER BY p.name")->fetchAll();
+        foreach ($rr as $r) {
+            $p = new Plugin();
+            $p->load($r['plugin_id']);
+            array_push($ret, $p);
+        }
+        return $ret;
+    }
 
-	function getPluginsByUserId($user_id) {
-		$ret = array();
-		$db = DBManager::get();
-		$rr = $db->query(sprintf("SELECT p.* FROM plugins p, users u WHERE p.user_id='%s' AND u.user_id=p.user_id ORDER BY p.name",$user_id))->fetchAll();
-		foreach ($rr as $r) {
-			$p = new Plugin();
-			$p->load($r['plugin_id']);
-			array_push($ret, $p);
-		}
-		return $ret;
-	}
+    function getPluginsByUserId($user_id) {
+        $ret = array();
+        $db = DBManager::get();
+        $rr = $db->query(sprintf("SELECT p.* FROM plugins p, users u WHERE p.user_id='%s' AND u.user_id=p.user_id ORDER BY p.name",$user_id))->fetchAll();
+        foreach ($rr as $r) {
+            $p = new Plugin();
+            $p->load($r['plugin_id']);
+            array_push($ret, $p);
+        }
+        return $ret;
+    }
 
-	function getPluginsByExtendedSearch($search_items) {
-		$ret = array();
-		if (count($search_items) == 0) return $ret;
-		$db = DBManager::get();
-		$params = array();
-		$sql = "SELECT p.* FROM plugins p WHERE 1=1 ";
-		if ($search_items['category_id'] != 'all') {
-			$sql .= " AND p.plugin_id IN (SELECT cp.plugin_id FROM categories_plugins cp WHERE cp.category_id=? AND cp.plugin_id=p.plugin_id)";
-			array_push($params, $search_items['category_id']);
-		}
-		if ($search_items['language'] != 'all') {
-			$sql .= " AND p.language LIKE ?";
-			array_push($params, '%'.$search_items['language'].'%');
-		}
-		if ($search_items['search_txt'] != '') {
-			$tmp_sql = " LOWER(p.name) LIKE LOWER(?)";
-			array_push($params,'%'.addslashes($search_items['search_txt']).'%');
-			if ($search_items['fulltext'] == 'yes') {
-				$tmp_sql .= " OR LOWER(p.short_description) LIKE LOWER(?)";
-				array_push($params,'%'.addslashes($search_items['search_txt']).'%');
-				$tmp_sql .= " OR LOWER(p.description) LIKE LOWER(?)";
-				array_push($params,'%'.addslashes($search_items['search_txt']).'%');
-			}
-			$sql = $sql . ' AND (' . $tmp_sql . ')';
-		}
-		$sql .= " AND (p.approved=1 OR (p.approved=0 AND 1=?)) ";
-		array_push($params,($this->authenticated ? 1 : 0));
-		$stmt = $db->prepare($sql);
-		$stmt->execute($params);
-		$rr = $stmt->fetchAll();
-		foreach ($rr as $r) {
-			$p = new Plugin();
-			$p->load($r['plugin_id']);
-			array_push($ret, $p);
-		}
-		return $ret;
-	}
+    function getPluginsByExtendedSearch($search_items) {
+        $ret = array();
+        if (count($search_items) == 0) return $ret;
+        $db = DBManager::get();
+        $params = array();
+        $sql = "SELECT p.* FROM plugins p WHERE 1=1 ";
+        if ($search_items['category_id'] != 'all') {
+            $sql .= " AND p.plugin_id IN (SELECT cp.plugin_id FROM categories_plugins cp WHERE cp.category_id=? AND cp.plugin_id=p.plugin_id)";
+            array_push($params, $search_items['category_id']);
+        }
+        if ($search_items['language'] != 'all') {
+            $sql .= " AND p.language LIKE ?";
+            array_push($params, '%'.$search_items['language'].'%');
+        }
+        if ($search_items['search_txt'] != '') {
+            $tmp_sql = " LOWER(p.name) LIKE LOWER(?)";
+            array_push($params,'%'.$search_items['search_txt'].'%');
+            if ($search_items['fulltext'] == 'yes') {
+                $tmp_sql .= " OR LOWER(p.short_description) LIKE LOWER(?)";
+                array_push($params,'%'.$search_items['search_txt'].'%');
+                $tmp_sql .= " OR LOWER(p.description) LIKE LOWER(?)";
+                array_push($params,'%'.$search_items['search_txt'].'%');
+            }
+            $sql = $sql . ' AND (' . $tmp_sql . ')';
+        }
+        $sql .= " AND (p.approved=1 OR (p.approved=0 AND 1=?)) ";
+        array_push($params,($this->authenticated ? 1 : 0));
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rr = $stmt->fetchAll();
+        foreach ($rr as $r) {
+            $p = new Plugin();
+            $p->load($r['plugin_id']);
+            array_push($ret, $p);
+        }
+        return $ret;
+    }
 
-	function getUnclearPlugins() {
-		$ret = array();
-		$db = DBManager::get();
-		$rr = $db->query("SELECT * FROM plugins WHERE approved=0 ORDER BY name")->fetchAll();
-		foreach ($rr as $r) {
-			$p = new Plugin();
-			$p->load($r['plugin_id']);
-			array_push($ret, $p);
-		}
-		return $ret;
-	}
-	
+    function getUnclearPlugins() {
+        $ret = array();
+        $db = DBManager::get();
+        $rr = $db->query("SELECT * FROM plugins WHERE approved=0 ORDER BY name")->fetchAll();
+        foreach ($rr as $r) {
+            $p = new Plugin();
+            $p->load($r['plugin_id']);
+            array_push($ret, $p);
+        }
+        return $ret;
+    }
+    
 
-	function getPluginsByCategory($category_id) {
-		$ret = array();
-		$db = DBManager::get();
-		$rr = $db->query(sprintf("SELECT p.* FROM plugins p, categories_plugins cp WHERE cp.category_id='%s' AND p.plugin_id=cp.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=%d))",$category_id, ($this->authenticated ? 1 : 0)))->fetchAll();
-		foreach ($rr as $r) {
-			$p = new Plugin();
-			$p->load($r['plugin_id']);
-			array_push($ret, $p);
-		}
-		return $ret;
-	}
+    function getPluginsByCategory($category_id) {
+        $ret = array();
+        $db = DBManager::get();
+        $rr = $db->query(sprintf("SELECT p.* FROM plugins p, categories_plugins cp WHERE cp.category_id='%s' AND p.plugin_id=cp.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=%d))",$category_id, ($this->authenticated ? 1 : 0)))->fetchAll();
+        foreach ($rr as $r) {
+            $p = new Plugin();
+            $p->load($r['plugin_id']);
+            array_push($ret, $p);
+        }
+        return $ret;
+    }
 
-	function getPluginsByHitlist($hitlist) {
-		$ret = array();
-		$db = DBManager::get();
-		switch ($hitlist) {
-			case 'recommended':
-				$rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND p.classification IN ('firstclass','secondclass') ORDER BY p.classification, p.mkdate DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
-				break;
-			case 'latest':
-				$rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) ORDER BY p.mkdate DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
-				break;
-			case 'most_downloaded':
-				$rr = $db->query(sprintf("SELECT p.plugin_id, p.name, SUM(r.downloads) rel_downloads FROM plugins p, releases r WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND r.plugin_id=p.plugin_id GROUP BY p.plugin_id ORDER BY 3, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
+    function getPluginsByHitlist($hitlist) {
+        $ret = array();
+        $db = DBManager::get();
+        switch ($hitlist) {
+            case 'recommended':
+                $rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND p.classification IN ('firstclass','secondclass') ORDER BY p.classification, p.mkdate DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
+                break;
+            case 'latest':
+                $rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) ORDER BY p.mkdate DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
+                break;
+            case 'most_downloaded':
+                $rr = $db->query(sprintf("SELECT p.plugin_id, p.name, SUM(r.downloads) rel_downloads FROM plugins p, releases r WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND r.plugin_id=p.plugin_id GROUP BY p.plugin_id ORDER BY 3, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
  ;
-				break;
-			case 'most_rated':
-				$rr = $db->query(sprintf("SELECT p.plugin_id, p.name, COUNT(r.rating) count_plugin FROM plugins p, releases re LEFT JOIN ratings r ON (r.range_id=re.release_id) WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND re.plugin_id=p.plugin_id GROUP BY p.plugin_id HAVING count_plugin > 0 ORDER BY p.name",($this->authenticated ? 1 : 0)))->fetchAll();
-				break;
-			default:
-				$rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE p.approved=1 ORDER BY p.mkdate DESC, p.name"))->fetchAll();
-			
-		}
-		foreach ($rr as $r) {
+                break;
+            case 'most_rated':
+                $rr = $db->query(sprintf("SELECT p.plugin_id, p.name, COUNT(r.rating) count_plugin FROM plugins p, releases re LEFT JOIN ratings r ON (r.range_id=re.release_id) WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND re.plugin_id=p.plugin_id GROUP BY p.plugin_id HAVING count_plugin > 0 ORDER BY p.name",($this->authenticated ? 1 : 0)))->fetchAll();
+                break;
+            default:
+                $rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE p.approved=1 ORDER BY p.mkdate DESC, p.name"))->fetchAll();
+            
+        }
+        foreach ($rr as $r) {
                         $p = new Plugin();
                         $p->load($r['plugin_id']);
                         array_push($ret, $p);
                 }
-		return $ret;
-	}
+        return $ret;
+    }
 
-	function getPluginsByTxt($txt, $catagory_id){
-		$ret = array();
-		$db = DBManager::get();
-		if (!$catagory_id) {
-			$stmt = DBManager::get()->prepare("SELECT p.* FROM plugins p WHERE UPPER(p.name) LIKE UPPER(?) AND (p.approved=1 OR (p.approved=0 AND 1=?)) AND EXISTS (SELECT cp.plugin_id FROM categories_plugins cp WHERE cp.plugin_id=p.plugin_id) ORDER BY p.name");
-			$stmt->execute(array('%'.$txt.'%',($this->authenticated ? 1 : 0)));
-			$rr = $stmt->fetchAll();
-		} else {
-			$stmt = DBManager::get()->prepare("SELECT p.* FROM plugins p, categories_plugins cp WHERE UPPER(p.name) LIKE UPPER(?) AND cp.plugin_id=p.plugin_id AND cp.category_id=? AND (p.approved=1 OR (p.approved=0 AND 1=?)) ORDER BY p.name");
-			$stmt->execute(array('%'.$txt.'%',$catagory_id,($this->authenticated ? 1 : 0)));
-			$rr = $stmt->fetchAll();
-		}
-			
-		foreach ($rr as $r) {
+    function getPluginsByTxt($txt, $catagory_id){
+        $ret = array();
+        $db = DBManager::get();
+        if (!$catagory_id) {
+            $stmt = DBManager::get()->prepare("SELECT p.* FROM plugins p WHERE UPPER(p.name) LIKE UPPER(?) AND (p.approved=1 OR (p.approved=0 AND 1=?)) AND EXISTS (SELECT cp.plugin_id FROM categories_plugins cp WHERE cp.plugin_id=p.plugin_id) ORDER BY p.name");
+            $stmt->execute(array('%'.$txt.'%',($this->authenticated ? 1 : 0)));
+            $rr = $stmt->fetchAll();
+        } else {
+            $stmt = DBManager::get()->prepare("SELECT p.* FROM plugins p, categories_plugins cp WHERE UPPER(p.name) LIKE UPPER(?) AND cp.plugin_id=p.plugin_id AND cp.category_id=? AND (p.approved=1 OR (p.approved=0 AND 1=?)) ORDER BY p.name");
+            $stmt->execute(array('%'.$txt.'%',$catagory_id,($this->authenticated ? 1 : 0)));
+            $rr = $stmt->fetchAll();
+        }
+            
+        foreach ($rr as $r) {
                         $p = new Plugin();
                         $p->load($r['plugin_id']);
                         array_push($ret, $p);
                 }
-		return $ret;
-	}
+        return $ret;
+    }
 
-	public function getPluginsByTagName($tag) {
-		$ret = array();
-		$stmt = DBManager::get()->prepare("SELECT p.plugin_id FROM plugins p, tags_objects tt, tags t WHERE t.tag=? AND tt.tag_id=t.tag_id AND p.plugin_id=tt.object_id AND (p.approved=1 OR (p.approved=0 AND 1=?))
+    public function getPluginsByTagName($tag) {
+        $ret = array();
+        $stmt = DBManager::get()->prepare("SELECT p.plugin_id FROM plugins p, tags_objects tt, tags t WHERE t.tag=? AND tt.tag_id=t.tag_id AND p.plugin_id=tt.object_id AND (p.approved=1 OR (p.approved=0 AND 1=?))
                                                   UNION SELECT p.plugin_id FROM plugins p, tags_objects tt, tags t, releases r WHERE t.tag=? AND tt.tag_id=t.tag_id AND r.release_id=tt.object_id AND p.plugin_id=r.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=?))");
-		$stmt->execute(array(addslashes($tag),($this->authenticated ? 1 : 0), addslashes($tag),($this->authenticated ? 1 : 0)));
-		$rr = $stmt->fetchAll();
-		foreach ($rr as $r) {
+        $stmt->execute(array($tag,($this->authenticated ? 1 : 0), $tag,($this->authenticated ? 1 : 0)));
+        $rr = $stmt->fetchAll();
+        foreach ($rr as $r) {
                         $p = new Plugin();
                         $p->load($r['plugin_id']);
                         array_push($ret, $p);
                 }
                 return $ret;
-	}
+    }
 
-	function setFileContent($file_name, $file_size, $user_id, $file_id, $file_type) {
-		if (!$file_id) {
-			$f = new MFile();
-			$f->setUserId($user_id)
-			  ->setFileName($file_name)
-			  ->setFileSize($file_size)
-			  ->setFileType($file_type)
-			  ->save();
-		} else {
-			$f = new MFile();
-			$f->load($file_id);
-			$f->setUserId($user_id)
-			  ->setFileName($file_name)
-			  ->setFileSize($file_size)
-			  ->save();
-		}
-		return $f->getFileId();
+    function setFileContent($file_name, $file_size, $user_id, $file_id, $file_type) {
+        if (!$file_id) {
+            $f = new MFile();
+            $f->setUserId($user_id)
+              ->setFileName($file_name)
+              ->setFileSize($file_size)
+              ->setFileType($file_type)
+              ->save();
+        } else {
+            $f = new MFile();
+            $f->load($file_id);
+            $f->setUserId($user_id)
+              ->setFileName($file_name)
+              ->setFileSize($file_size)
+              ->save();
+        }
+        return $f->getFileId();
         }
 
-	// Liest ein Verzeichnis ein
+    // Liest ein Verzeichnis ein
         function GetDirContents($dir){
                 ini_set("max_execution_time",100);
                 if (!is_dir($dir)) {
-			$this->error_str = sprintf("Fehler! kein g&uuml;ltiges Verzeichnis: %s!",$dir);
-			return FALSE;
-		}
+            $this->error_str = sprintf("Fehler! kein g&uuml;ltiges Verzeichnis: %s!",$dir);
+            return FALSE;
+        }
                 if ($root=@opendir($dir)){
                         while ($file=readdir($root)){
                                 if($file=="." || $file==".."){continue;}
@@ -257,7 +257,7 @@ class MPDBM {
                 return $files;
         }
 
-	function add_new_zip($zipfile, $zipfile_size, $zipfile_name, $plugin_id, $user_id, $file_type='screenshots') {
+    function add_new_zip($zipfile, $zipfile_size, $zipfile_name, $plugin_id, $user_id, $file_type='screenshots') {
                 $db = DBManager::get();
 
                 $zipdir = $this->tmp_path."/".$plugin_id."_".time();
@@ -265,20 +265,20 @@ class MPDBM {
 
                 if ($zipfile_size > 50000 * 1024) {
                         $this->error_str = "Die hochgeladene ZIP-Datei ist zu gross!";
-			return FALSE;
-		}
+            return FALSE;
+        }
 
                 if (!@copy($zipfile, $this->tmp_path."/$zipname")) {
-			$this->error_str = "Fehler beim Kopieren des ZIP-Archivs!";
-			return FALSE;
-		}
+            $this->error_str = "Fehler beim Kopieren des ZIP-Archivs!";
+            return FALSE;
+        }
 
                 // ZIP-Testing...
                 exec("unzip -t ".$this->tmp_path."/$zipname 2>&1", $out, $err);
                 if ($err) {
-			$this->error_str = "Fehler im ZIP-Archiv!"."unzip -t ".$this->tmp_path."/$zipname 2>&1";
-			return FALSE;
-		}
+            $this->error_str = "Fehler im ZIP-Archiv!"."unzip -t ".$this->tmp_path."/$zipname 2>&1";
+            return FALSE;
+        }
 
                 unset($out);
                 unset($err);
@@ -286,9 +286,9 @@ class MPDBM {
                 // ZIP-Auspacking...
                 exec("unzip -jno ".$this->tmp_path."/$zipname -d $zipdir 2>&1", $out, $err);
                 if ($err) {
-			$this->error_str = "Fehler beim Entpacken des ZIP-Archivs!";
-			return FALSE;
-		}
+            $this->error_str = "Fehler beim Entpacken des ZIP-Archivs!";
+            return FALSE;
+        }
 
                 $files = $this->GetDirContents($zipdir);
 
@@ -317,9 +317,9 @@ class MPDBM {
                         $r = $db->query(sprintf("SELECT MAX(sort) maxsort FROM screenshots WHERE plugin_id='%s'",$plugin_id))->fetch(PDO::FETCH_NUM);
                         $max_sort = ($r[0] ? $r[0] : 1);
 
-			$file_id = $this->setFileContent(basename($val), filesize($val), $user_id, FALSE, $file_type);
+            $file_id = $this->setFileContent(basename($val), filesize($val), $user_id, FALSE, $file_type);
                         if ($this->imaging($file_id, $val, filesize($val), basename($val))) {
-				$s = new Screenshot();
+                $s = new Screenshot();
                                 $s->setPluginId($plugin_id)
                                   ->setFileId($file_id)
                                   ->setTitleScreen(0);
@@ -327,7 +327,7 @@ class MPDBM {
 
                                 $good++;
                         } else {
-				$f = new MFile();
+                $f = new MFile();
                                 $f->load($file_id);
                                 $f->remove();
                                 unset($f);
@@ -344,7 +344,7 @@ class MPDBM {
 
 
 
-	function uploader($file_id=FALSE, $user_id, $img, $img_size, $img_name, $file_type) {
+    function uploader($file_id=FALSE, $user_id, $img, $img_size, $img_name, $file_type) {
                 if (!$img_name) {
                         return FALSE;
                 }
@@ -354,24 +354,24 @@ class MPDBM {
                         return FALSE;
                 } else {
                         $file_id = $this->setFileContent($img_name, $img_size, $user_id, $file_id, $file_type);
-			if ($file_type == 'screenshots')
-				$ok = $this->imaging($file_id, $img, $img_size, $img_name);
-			else if ($file_type == 'releases') {
-				$uploaddir = $GLOBALS['DYNAMIC_CONTENT_PATH'] . '/releases'; //Uploadverzeichnis
-				$newfile = $uploaddir . "/".$file_id;
-				if(!@copy($img,$newfile)) {
-					@unlink($newfile);
-					$this->error_str = "Error 4: " . sprintf(_("Es ist ein Fehler beim Kopieren der Datei %s aufgetreten. Die Datei wurde nicht hochgeladen!"),$img);
-                        		return FALSE;
-				}
-			}
-				
-			return $file_id;
+            if ($file_type == 'screenshots')
+                $ok = $this->imaging($file_id, $img, $img_size, $img_name);
+            else if ($file_type == 'releases') {
+                $uploaddir = $GLOBALS['DYNAMIC_CONTENT_PATH'] . '/releases'; //Uploadverzeichnis
+                $newfile = $uploaddir . "/".$file_id;
+                if(!@copy($img,$newfile)) {
+                    @unlink($newfile);
+                    $this->error_str = "Error 4: " . sprintf(_("Es ist ein Fehler beim Kopieren der Datei %s aufgetreten. Die Datei wurde nicht hochgeladen!"),$img);
+                                return FALSE;
+                }
+            }
+                
+            return $file_id;
                 }
                 return FALSE;
         }
 
-	function imaging($foto_id, $img, $img_size, $img_name) {
+    function imaging($foto_id, $img, $img_size, $img_name) {
                 $max_file_size = 8000; //max Größe der Bilddatei in KB
                 $img_max_h_thumb = 150; // max picture height (thumbnail)
                 $img_max_h = 800; // max picture height
@@ -463,7 +463,7 @@ $img_res = ImageCreateTrueColor($newwidth, $newheight);
                                         return FALSE;
                                 }
                         }
-			// Big-Images
+            // Big-Images
                         if (($hscale > 1) || ($wscale > 1)) {
                                 $scale = ($hscale > $wscale)? $hscale : $wscale;
                                 $newwidth = floor($width / $scale);
@@ -514,82 +514,82 @@ $img_res = ImageCreateTrueColor($newwidth, $newheight);
                 return FALSE;
         }
 
-	function getTagCounter($limit=40) {
-		$ret = array();
-		$db = DBManager::get();
-		$rr = $db->query(sprintf("SELECT t.tag, COUNT(t.tag_id) anz FROM tags t, tags_objects ta, plugins p, releases r WHERE ta.tag_id=t.tag_id AND ((p.plugin_id=ta.object_id AND (p.approved=1 OR (p.approved=0 AND 1=%d)))) OR (r.release_id=ta.object_id AND p.plugin_id=r.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=%d))) GROUP BY t.tag ORDER BY 2 DESC %s",($this->authenticated ? 1 : 0), ($this->authenticated ? 1 : 0), ($limit?"LIMIT 0,$limit":"")))->fetchAll();
-		foreach ($rr as $r) {
-			$r['tag_weight'] = $this->calcTagWeight($r['tag']);
-			array_push($ret, $r);
-		}
-		array_multisort($ret, SORT_ASC);
-		return $ret;
-	}
+    function getTagCounter($limit=40) {
+        $ret = array();
+        $db = DBManager::get();
+        $rr = $db->query(sprintf("SELECT t.tag, COUNT(t.tag_id) anz FROM tags t, tags_objects ta, plugins p, releases r WHERE ta.tag_id=t.tag_id AND ((p.plugin_id=ta.object_id AND (p.approved=1 OR (p.approved=0 AND 1=%d)))) OR (r.release_id=ta.object_id AND p.plugin_id=r.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=%d))) GROUP BY t.tag ORDER BY 2 DESC %s",($this->authenticated ? 1 : 0), ($this->authenticated ? 1 : 0), ($limit?"LIMIT 0,$limit":"")))->fetchAll();
+        foreach ($rr as $r) {
+            $r['tag_weight'] = $this->calcTagWeight($r['tag']);
+            array_push($ret, $r);
+        }
+        array_multisort($ret, SORT_ASC);
+        return $ret;
+    }
 
-	function getMaxTagCount($single='') {
-		$db = DBManager::get();
-		if (!$single)
-			$r = $db->query("SELECT * FROM tags_objects")->fetchAll();
-		else {
-			$stmt = $db->prepare("SELECT ta.* FROM tags_objects ta, tags t WHERE ta.tag_id=t.tag_id AND t.tag=? AND (EXISTS (SELECT p.plugin_id FROM plugins p WHERE plugin_id=ta.object_id AND (p.approved=1 OR (p.approved=0 AND 1=?)))) OR EXISTS (SELECT r.release_id FROM releases r, plugins p WHERE r.release_id=ta.object_id AND p.plugin_id=r.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=?)))");
-			$stmt->execute(array(addslashes($single), ($this->authenticated ? 1 : 0), ($this->authenticated ? 1 : 0)));
-			$r = $stmt->fetchAll();
-		}
-		return count($r);
-	}
+    function getMaxTagCount($single='') {
+        $db = DBManager::get();
+        if (!$single)
+            $r = $db->query("SELECT * FROM tags_objects")->fetchAll();
+        else {
+            $stmt = $db->prepare("SELECT ta.* FROM tags_objects ta, tags t WHERE ta.tag_id=t.tag_id AND t.tag=? AND (EXISTS (SELECT p.plugin_id FROM plugins p WHERE plugin_id=ta.object_id AND (p.approved=1 OR (p.approved=0 AND 1=?)))) OR EXISTS (SELECT r.release_id FROM releases r, plugins p WHERE r.release_id=ta.object_id AND p.plugin_id=r.plugin_id AND (p.approved=1 OR (p.approved=0 AND 1=?)))");
+            $stmt->execute(array($single, ($this->authenticated ? 1 : 0), ($this->authenticated ? 1 : 0)));
+            $r = $stmt->fetchAll();
+        }
+        return count($r);
+    }
 
-	function calcTagWeight($tag) {
-		$f_max = 10;
-		$t_i = $this->getMaxTagCount($tag);
+    function calcTagWeight($tag) {
+        $f_max = 10;
+        $t_i = $this->getMaxTagCount($tag);
 
-		$db = DBManager::get();
+        $db = DBManager::get();
                 $r = $db->query(sprintf("SELECT MAX(x.anz) anz_max, MIN(x.anz) anz_min FROM (SELECT t.tag, COUNT(t.tag_id) anz FROM tags t, tags_objects ta WHERE t.tag_id=ta.tag_id GROUP BY t.tag ORDER BY t.tag) x LIMIT 1"))->fetchAll();
-		$anz_max = $r[0]['anz_max'];
-		$anz_min = $r[0]['anz_min'];
+        $anz_max = $r[0]['anz_max'];
+        $anz_min = $r[0]['anz_min'];
 
-		$delta = ($anz_max - $anz_min) / $f_max;
-		$newThresholds = array();
-		for ($x=1; $x<=$f_max; $x++) { 
-			$newThresholds[$x] = 100 * log( ($anz_min + $x * $delta) + 2); 
-		}
+        $delta = ($anz_max - $anz_min) / $f_max;
+        $newThresholds = array();
+        for ($x=1; $x<=$f_max; $x++) { 
+            $newThresholds[$x] = 100 * log( ($anz_min + $x * $delta) + 2); 
+        }
 
-		$fontSet = false; 
-		foreach ($newThresholds as $k=>$threshold) {
-			if ( (100 * log($t_i+2) <= $newThresholds[$k]) && !$fontSet) { 
-				$fontSet = true; 
-				return $k;
-			} 
-		}
-	}
+        $fontSet = false; 
+        foreach ($newThresholds as $k=>$threshold) {
+            if ( (100 * log($t_i+2) <= $newThresholds[$k]) && !$fontSet) { 
+                $fontSet = true; 
+                return $k;
+            } 
+        }
+    }
 
-	public function searchForTags($val) {
-		$db = DBManager::get();
-		$stmt = $db->prepare("SELECT * FROM tags WHERE LOWER(tag) LIKE LOWER(?)");
-		$stmt->execute(array(addslashes($val).'%'));
-		$rr = $stmt->fetchAll();
+    public function searchForTags($val) {
+        $db = DBManager::get();
+        $stmt = $db->prepare("SELECT * FROM tags WHERE LOWER(tag) LIKE CONCAT(LOWER(?), '%')");
+        $stmt->execute(array($val));
+        $rr = $stmt->fetchAll();
                 $ret = "<UL>";
                 $suche = sprintf("/^(%s)/",$val);
                 $ersetze = "<SPAN STYLE=\"font-weight:bold;\">\$1</SPAN>";
                 foreach ($rr as $r) {
-                        $txt = preg_replace($suche,$ersetze,stripslashes($r['tag']));
+                        $txt = preg_replace($suche,$ersetze,$r['tag']);
                         $ret .= "<LI>".$txt."</LI>";
                 }
                 $ret .= "</UL>";
                 return $ret;
         }
 
-	public function getComments($range_id) {
-		$ret = array();
-		$rr = DBManager::get()->query(sprintf("SELECT comment_id FROM comments WHERE range_id='%s' ORDER BY mkdate DESC",$range_id))->fetchAll();
-		foreach ($rr as $r) {
-			$c = new Comment();
-			$c->load($r['comment_id']);
-			array_push($ret, $c);
-		}
-		return $ret;
-	}
-	
-	public function getPluginManifest($pluginpath) {
+    public function getComments($range_id) {
+        $ret = array();
+        $rr = DBManager::get()->query(sprintf("SELECT comment_id FROM comments WHERE range_id='%s' ORDER BY mkdate DESC",$range_id))->fetchAll();
+        foreach ($rr as $r) {
+            $c = new Comment();
+            $c->load($r['comment_id']);
+            array_push($ret, $c);
+        }
+        return $ret;
+    }
+    
+    public function getPluginManifest($pluginpath) {
                 $manifest = @file($pluginpath . '/plugin.manifest');
                 $result = array();
 
@@ -615,55 +615,55 @@ $img_res = ImageCreateTrueColor($newwidth, $newheight);
         }
 
 
-	public function rmdirr($dirname){
-		// Simple delete for a file
-		if (is_file($dirname)) {
-			return @unlink($dirname);
-		} else if (!is_dir($dirname)){
-			return false;
-		}
+    public function rmdirr($dirname){
+        // Simple delete for a file
+        if (is_file($dirname)) {
+            return @unlink($dirname);
+        } else if (!is_dir($dirname)){
+            return false;
+        }
 
-		// Loop through the folder
-		$dir = dir($dirname);
-		while (false !== ($entry = $dir->read())) {
-		// Skip pointers
-			if ($entry == '.' || $entry == '..') {
-				continue;
-			}
+        // Loop through the folder
+        $dir = dir($dirname);
+        while (false !== ($entry = $dir->read())) {
+        // Skip pointers
+            if ($entry == '.' || $entry == '..') {
+                continue;
+            }
 
-			// Deep delete directories
-			if (is_dir("$dirname/$entry")) {
-				$this->rmdirr("$dirname/$entry");
-			} else {
-				@unlink("$dirname/$entry");
-			}
-		}
-		// Clean up
-		$dir->close();
-		return @rmdir($dirname);
-	}
+            // Deep delete directories
+            if (is_dir("$dirname/$entry")) {
+                $this->rmdirr("$dirname/$entry");
+            } else {
+                @unlink("$dirname/$entry");
+            }
+        }
+        // Clean up
+        $dir->close();
+        return @rmdir($dirname);
+    }
 
 
-	public function checkReleaseZip($zipfile, $zipfile_size, $zipfile_name) {
+    public function checkReleaseZip($zipfile, $zipfile_size, $zipfile_name) {
                 $zipdir = $this->tmp_path."/".time();
                 $zipname = basename($zipfile).".zip";
 
                 if ($zipfile_size > 50000 * 1024) {
                         $this->error_str = "Die hochgeladene ZIP-Datei ist zu gross!";
-			return FALSE;
-		}
+            return FALSE;
+        }
 
                 if (!@copy($zipfile, $this->tmp_path."/$zipname")) {
-			$this->error_str = "Fehler beim Kopieren des ZIP-Archivs!";
-			return FALSE;
-		}
+            $this->error_str = "Fehler beim Kopieren des ZIP-Archivs!";
+            return FALSE;
+        }
 
                 // ZIP-Testing...
                 exec("unzip -t ".$this->tmp_path."/$zipname 2>&1", $out, $err);
                 if ($err) {
-			$this->error_str = "Fehler im ZIP-Archiv!"."unzip -t ".$this->tmp_path."/$zipname 2>&1";
-			return FALSE;
-		}
+            $this->error_str = "Fehler im ZIP-Archiv!"."unzip -t ".$this->tmp_path."/$zipname 2>&1";
+            return FALSE;
+        }
 
                 unset($out);
                 unset($err);
@@ -671,52 +671,52 @@ $img_res = ImageCreateTrueColor($newwidth, $newheight);
                 // ZIP-Auspacking...
                 exec("unzip -jno ".$this->tmp_path."/$zipname -d $zipdir 2>&1", $out, $err);
                 if ($err) {
-			$this->error_str = "Fehler beim Entpacken des ZIP-Archivs!";
-			return FALSE;
-		}
+            $this->error_str = "Fehler beim Entpacken des ZIP-Archivs!";
+            return FALSE;
+        }
 
                 $files = $this->GetDirContents($zipdir);
 
-		$manifest = array();
+        $manifest = array();
                 if (!is_array($files)) {
-			$this->error_str = "Keine Dateien im ZIP-Archiv gefunden!";
-			$this->rmdirr($zipdir);
-			unlink($this->tmp_path."/$zipname");
-			return FALSE;
-		} else {
-			$manifest = $this->getPluginManifest($zipdir);
-			if (count($manifest) == 0) {
-				$this->error_str = "Kein Manifest gefunden!";
-				$this->rmdirr($zipdir);
-				unlink($this->tmp_path."/$zipname");
-				return FALSE;
-			} else {
-				$studip_version_check = "/(\d)(\.\d+)*.*/";
-				$err = array();
-				if (empty($manifest['pluginname'])) $err[] = "pluginname";
-				if (empty($manifest['pluginclassname'])) $err[] = "pluginclassname";
-				if (empty($manifest['origin'])) $err[] = "origin";
-				if (empty($manifest['version'])) $err[] = "version";
-				if (empty($manifest['studipMinVersion'])) $err[] = "studipMinVersion";
-				if (!empty($manifest['studipMinVersion']) && !preg_match($studip_version_check, $manifest['studipMinVersion'])) $err[] = "studipMinVersion (falsches Format)";
-				if (count($err)) {
-					$this->error_str = "Folgende Angaben fehlen im Manifest: ".join(', ',$err);
-					$this->rmdirr($zipdir);
-					unlink($this->tmp_path."/$zipname");
-					return FALSE;
-				}
-			}
-		}
+            $this->error_str = "Keine Dateien im ZIP-Archiv gefunden!";
+            $this->rmdirr($zipdir);
+            unlink($this->tmp_path."/$zipname");
+            return FALSE;
+        } else {
+            $manifest = $this->getPluginManifest($zipdir);
+            if (count($manifest) == 0) {
+                $this->error_str = "Kein Manifest gefunden!";
+                $this->rmdirr($zipdir);
+                unlink($this->tmp_path."/$zipname");
+                return FALSE;
+            } else {
+                $studip_version_check = "/(\d)(\.\d+)*.*/";
+                $err = array();
+                if (empty($manifest['pluginname'])) $err[] = "pluginname";
+                if (empty($manifest['pluginclassname'])) $err[] = "pluginclassname";
+                if (empty($manifest['origin'])) $err[] = "origin";
+                if (empty($manifest['version'])) $err[] = "version";
+                if (empty($manifest['studipMinVersion'])) $err[] = "studipMinVersion";
+                if (!empty($manifest['studipMinVersion']) && !preg_match($studip_version_check, $manifest['studipMinVersion'])) $err[] = "studipMinVersion (falsches Format)";
+                if (count($err)) {
+                    $this->error_str = "Folgende Angaben fehlen im Manifest: ".join(', ',$err);
+                    $this->rmdirr($zipdir);
+                    unlink($this->tmp_path."/$zipname");
+                    return FALSE;
+                }
+            }
+        }
                 $this->rmdirr($zipdir);
                 return $manifest;
         }
 
-	public function setRating($range_id, $user_id, $rating) {
-		$id = md5(uniqid(time().$user_id.$range_id));
-		DBManager::get()->query(sprintf("REPLACE INTO ratings SET range_id='%s', user_id='%s', rating=%d",$range_id, $user_id, $rating));
-	}
+    public function setRating($range_id, $user_id, $rating) {
+        $id = md5(uniqid(time().$user_id.$range_id));
+        DBManager::get()->query(sprintf("REPLACE INTO ratings SET range_id='%s', user_id='%s', rating=%d",$range_id, $user_id, $rating));
+    }
 
-	public function getUserRatings($range_id) {
+    public function getUserRatings($range_id) {
                 $db = DBManager::get();
                 $summe = 0;
                 $rr = $db->query(sprintf("SELECT SQL_CACHE rating FROM ratings WHERE range_id='%s' AND rating IS NOT NULL AND rating!=0",$range_id))->fetchAll();
@@ -729,15 +729,15 @@ $img_res = ImageCreateTrueColor($newwidth, $newheight);
                         return FALSE;
         }
 
-	public function getSpecificUserRating($range_id, $user_id) {
+    public function getSpecificUserRating($range_id, $user_id) {
                 $db = DBManager::get();
                 $rr = $db->query(sprintf("SELECT SQL_CACHE rating FROM ratings WHERE range_id='%s' AND user_id='%s' AND rating IS NOT NULL AND rating!=0",$range_id, $user_id))->fetchAll();
                 if (count($rr) > 0)
-			return $rr[0]['rating'];
+            return $rr[0]['rating'];
                 else
                         return 0;
         }
-	
+    
 
 
 }

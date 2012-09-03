@@ -1,10 +1,12 @@
 <?php
 /**
-* @author               Jan Kulmann <jankul@zmml.uni-bremen.de>
-*/
+ * @author Jan-Hendrik Willms <tleilax+studip@gmail.com>
+ * @author Jan Kulmann <jankul@zmml.uni-bremen.de>
+ */
 
 // +---------------------------------------------------------------------------+
 // Copyright (C) 2012 Jan Kulmann <jankul@zmml.uni-bremen.de>
+// Copyright (C) 2012 Jan-Hendrik Willms <tleilax+studip@gmail.com>
 // +---------------------------------------------------------------------------+
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -22,89 +24,88 @@
 
 require_once 'StudipAuth.class.php';
 
-class Auth {
+class Auth
+{
+    public function authenticateFromDev($loginkey, $userinformation)
+    {
+        Session::get()->startSession();
+        $_SESSION['user_id'] = '';
 
-	public function __construct() {
+        $first_name = trim(CryptMP::decryptPrivate(base64_decode($userinformation['first_name'])));
+        $last_name  = trim(CryptMP::decryptPrivate(base64_decode($userinformation['last_name'])));
+        $username   = trim(CryptMP::decryptPrivate(base64_decode($userinformation['user_name'])));
+        $email      = trim(CryptMP::decryptPrivate(base64_decode($userinformation['email'])));
 
-	}
+        if (!empty($first_name) && !empty($last_name) && !empty($username) && !empty($email) && $loginkey == $GLOBALS['REMOTE_LOGIN_KEY']) {
+            $user_id = '';
+            if (!$GLOBALS['UM']->userAlreadyExists($username)) {
+                $GLOBALS['UM']->addNewUser($username, $first_name, $last_name, $email, '', 'Herr', '', 'studip');
+            } else {
+                $GLOBALS['UM']->updateUserInformation($username, array('first_name'=>$first_name, 'last_name'=>$last_name, 'email'=>$email));
+            }
+            $user_id = $GLOBALS['UM']->getUserIdByUsername($username);
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['sid'] = session_id();
+            return TRUE;
+        }
+        return FALSE;
+    }
 
-	public function authenticateFromDev($loginkey, $userinformation) {
-		Session::get()->startSession();
-		$_SESSION['user_id'] = '';
+    public function authenticate($username, $passwort)
+    {
+        Session::get()->startSession();
+        $_SESSION['user_id'] = '';
 
-		$first_name = trim(CryptMP::decryptPrivate(base64_decode($userinformation['first_name'])));
-		$last_name  = trim(CryptMP::decryptPrivate(base64_decode($userinformation['last_name'])));
-		$username   = trim(CryptMP::decryptPrivate(base64_decode($userinformation['user_name'])));
-		$email      = trim(CryptMP::decryptPrivate(base64_decode($userinformation['email'])));
+        $query = "SELECT user_id FROM users WHERE LOWER(username) = LOWER(?) AND passwort = MD5(?) AND auth = 'standard'";
+        $statement = DBManager::get()->prepare($query);
+        $statement->execute(array($username, $passwort));
+        if ($user_id = $statement->fetchColumn()) {
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['sid']     = session_id();
+            return true;
+        }
 
-		if (!empty($first_name) && !empty($last_name) && !empty($username) && !empty($email) && $loginkey == $GLOBALS['REMOTE_LOGIN_KEY']) {
-			$user_id = '';
-			if (!$GLOBALS['UM']->userAlreadyExists($username)) {
-				$GLOBALS['UM']->addNewUser($username, $first_name, $last_name, $email, '', 'Herr', '', 'studip');
-			} else {
-				$GLOBALS['UM']->updateUserInformation($username, array('first_name'=>$first_name, 'last_name'=>$last_name, 'email'=>$email));
-			}
-			$user_id = $GLOBALS['UM']->getUserIdByUsername($username);
-			$_SESSION['user_id'] = $user_id;
-			$_SESSION['sid'] = session_id();
-			return TRUE;
-		}
-		return FALSE;
-	}
+        $studipauth = new StudipAuth();
+        $userinformation = $studipauth->authenticate($username, $passwort);
+        if ($userinformation) {
+            $user_id = '';
+            if (!$GLOBALS['UM']->userAlreadyExists($username)) {
+                $GLOBALS['UM']->addNewUser($username, $userinformation['first_name'], $userinformation['last_name'], $userinformation['email'], '', 'Herr', '', 'studip');
+            } else {
+                $GLOBALS['UM']->updateUserInformation($username, $userinformation);
+            }
+            $user_id = $GLOBALS['UM']->getUserIdByUsername($username);
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['sid'] = session_id();
+            return TRUE;
+        }
 
-	public function authenticate($username, $passwort) {
-		Session::get()->startSession();
-		$_SESSION['user_id'] = '';
+        return FALSE;
+    }
 
-		$db = DBManager::get();
-		$r = $db->query(sprintf("SELECT * FROM users WHERE LOWER(username)=LOWER('%s') AND passwort='%s' AND auth='standard'",$username, md5($passwort)))->fetchAll();
-		if (count($r) == 1) {
-			$_SESSION['user_id'] = $r[0]['user_id'];
-			$_SESSION['sid'] = session_id();
-			return TRUE;
-		} else {
-			$studipauth = new StudipAuth();
-			$userinformation = $studipauth->authenticate($username, $passwort);
-			if ($userinformation) {
-				$user_id = '';
-				if (!$GLOBALS['UM']->userAlreadyExists($username)) {
-					$GLOBALS['UM']->addNewUser($username, $userinformation['first_name'], $userinformation['last_name'], $userinformation['email'], '', 'Herr', '', 'studip');
-				} else {
-					$GLOBALS['UM']->updateUserInformation($username, $userinformation);
-				}
-				$user_id = $GLOBALS['UM']->getUserIdByUsername($username);
-				$_SESSION['user_id'] = $user_id;
-				$_SESSION['sid'] = session_id();
-				return TRUE;
-			}
+    public function getAuthenticatedUser()
+    {
+        Session::get()->startSession();
+        if ($_SESSION['user_id'] == '') {
+            return FALSE;
+        }
 
-			$_SESSION['user_id'] = '';
-			return FALSE;
-		}
-	}
+        $query = "SELECT * FROM users WHERE user_id = ?";
+        $statement = DBManager::get()->prepare($query);
+        $statement->execute(array($_SESSION['user_id']));
+        if ($user = $statement->fetch(PDO::FETCH_ASSOC)) {
+            return $user;
+        }
 
-	public function getAuthenticatedUser() {
-		Session::get()->startSession();
-		if ($_SESSION['user_id'] == '')
-			return FALSE;
-		else {
-			$db = DBManager::get();
-			$r = $db->query(sprintf("SELECT * FROM users WHERE user_id='%s'",$_SESSION['user_id']))->fetchAll();
-			if (count($r) == 1) {
-				return $r[0];
-			} else {
-				return FALSE;
-			}
-		}
-	}
-	
-	public function checkPerm($perm) {
-		if (!$GLOBALS['PERM']->have_perm($perm)) {
-			GUIRenderer::showIndex($GLOBALS['FACTORY']->open('not_logged_in')->render());
-			die();
-		}
-	}
+        return false;
+    }
+    
+    public function checkPerm($perm)
+    {
+        if (!$GLOBALS['PERM']->have_perm($perm)) {
+            GUIRenderer::showIndex($GLOBALS['FACTORY']->open('not_logged_in')->render());
+            die();
+        }
+    }
 
 }
-
-?>
