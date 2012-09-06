@@ -130,7 +130,7 @@ class MFile
             $query = "INSERT INTO file_content (file_id, user_id, mkdate, file_name, file_size, file_type)
                       VALUES (?, ?, UNIX_TIMESTAMP(), ?, ?, ?)";
             $stmt = DBManager::get()->prepare($query);
-            $stmt->execute(array($this->file_id, $this->user_id, $this->mkdate, $this->file_name, $this->file_size, $this->file_type));
+            $stmt->execute(array($this->file_id, $this->user_id, $this->file_name, $this->file_size, $this->file_type));
         } else {
             $query = "UPDATE file_content SET file_name = ?, file_size = ? WHERE file_id = ?";
             $stmt = DBManager::get()->prepare($query);

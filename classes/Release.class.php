@@ -230,7 +230,7 @@ class Release {
                   WHERE object_id = ?
                   ORDER BY tag ASC";
         $statement = DBManager::get()->prepare($query);
-        $statement>execute(array($this->release_id));
+        $statement->execute(array($this->release_id));
         return $statement->fetchAll(PDO::FETCH_COLUMN);
     }
 
