@@ -4,7 +4,7 @@
 var charslimitation = 500;
 
 var updateCharsLeft = function() {
-	$j('#chars_left').text(charslimitation - document.plugin.short_description.value.length);
+    $j('#chars_left').text(charslimitation - document.plugin.short_description.value.length);
         if (document.plugin.short_description.value.length > charslimitation) {
                 $('chars_left').style.color = 'red';
         } else {
@@ -22,88 +22,74 @@ var checkInputLength = function() {
 }
 
 
-tinyMCE.init({
-	mode : "textareas",
-	theme : "advanced",
-	editor_selector : "mceAdvanced",
-	theme_advanced_toolbar_location : "top",
-	theme_advanced_toolbar_align : "left",
-	plugins : "safari,pagebreak,style,layer,table,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template",
-	theme_advanced_buttons1 : "bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,|,styleselect,formatselect,fontselect,fontsizeselect",
-	theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,cleanup,help,code,|,insertdate,inserttime,preview,|,forecolor,backcolor",
-	theme_advanced_buttons3 : "tablecontrols,|,hr,removeformat,visualaid,|,sub,sup,|,charmap,emotions,iespell,media,advhr,|,print,|,ltr,rtl,|,fullscreen",
-	cleanup_on_startup : true,
-	invalid_elements : "script"
-});
-
 var checkInput = function() {
-	if (jQuery(':hidden[class="sel_categories"]').length == 0 || $('titel').value == '' || $('license').value == '' || $('short_description').value == '') {
-		alert('Bitte füllen Sie alle Pflichtfelder aus!');
-		return false;
-	} else {
-		return checkInputLength();
-	}
+    if (jQuery(':hidden[class="sel_categories"]').length == 0 || $('titel').value == '' || $('license').value == '' || $('short_description').value == '') {
+        alert('Bitte füllen Sie alle Pflichtfelder aus!');
+        return false;
+    } else {
+        return checkInputLength();
+    }
 }
 
 var getCurrentCategories = function() {
-	$j.ajax({
-		url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_current_categories&plugin_id=<?=$p->getPluginId()?>',
-		cache: false,
-		dataType: 'html',
-		success: function(data) {
-			$j('#current_categories').html(data);
-		}
-	});
+    $j.ajax({
+        url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_current_categories&plugin_id=<?=$p->getPluginId()?>',
+        cache: false,
+        dataType: 'html',
+        success: function(data) {
+            $j('#current_categories').html(data);
+        }
+    });
 }
 
 var getAvailableCategories = function() {
-	$j.ajax({
-		url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_available_categories&plugin_id=<?=$p->getPluginId()?>',
-		cache: false,
-		dataType: 'html',
-		success: function(data) {
-			$j('#available_categories').html(data);
-		}
-	});
+    $j.ajax({
+        url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_available_categories&plugin_id=<?=$p->getPluginId()?>',
+        cache: false,
+        dataType: 'html',
+        success: function(data) {
+            $j('#available_categories').html(data);
+        }
+    });
 }
 
 var removeCategory = function(cid) {
-	$j('#c_'+cid).hide().remove();
-	$j('#ca_'+cid).fadeIn()
+    $j('#c_'+cid).hide().remove();
+    $j('#ca_'+cid).fadeIn()
 }
 
 var addCategory = function(cid) {
-	$j('#ca_'+cid).hide();
-	$j.ajax({
-		url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_category_item&category_id='+cid,
-		cache: false,
-		dataType: 'html',
-		success: function(data) {
-			$j(data).appendTo('#current_categories');
-		}
-	});
+    $j('#ca_'+cid).hide();
+    $j.ajax({
+        url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_category_item&category_id='+cid,
+        cache: false,
+        dataType: 'html',
+        success: function(data) {
+            $j(data).appendTo('#current_categories');
+        }
+    });
 }
 
 var removeParticipant = function(uid) {
-	$j('#pa_'+uid).hide();
-	$j.ajax({
-		url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=remove_participant&user_id='+uid+'&plugin_id=<?=$p->getPluginId()?>',
-		cache: false,
-		dataType: 'html',
-		success: function(data) {
-		}
-	});
+    $j('#pa_'+uid).hide();
+    $j.ajax({
+        url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=remove_participant&user_id='+uid+'&plugin_id=<?=$p->getPluginId()?>',
+        cache: false,
+        dataType: 'html',
+        success: function(data) {
+        }
+    });
 }
 
 
 $j(window).load(function () {
-	getAvailableCategories();
-	getCurrentCategories();
-	new Ajax.Autocompleter("tagsautocomplete", "tagsautocomplete_choices", "<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=tag_completer", {
-	        paramName: "value",
-        	minChars: 2
-	});
-	updateCharsLeft();
+    getAvailableCategories();
+    getCurrentCategories();
+    new Ajax.Autocompleter("tagsautocomplete", "tagsautocomplete_choices", "<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=tag_completer", {
+            paramName: "value",
+            minChars: 2
+    });
+    updateCharsLeft();
 });
 
 </script>
@@ -233,7 +219,7 @@ $j(window).load(function () {
   <TR>
     <TD COLSPAN=2>
       <DIV CLASS="topic">Tags:</DIV>
-	<INPUT TYPE="text" ID="tagsautocomplete" NAME="tags" VALUE="" MAXLENGTH="255" STYLE="width:500px;">
+    <INPUT TYPE="text" ID="tagsautocomplete" NAME="tags" VALUE="" MAXLENGTH="255" STYLE="width:500px;">
         <div id="tagsautocomplete_choices" class="tagsautocomplete"></div>
         <BR><SPAN STYLE="font-size:10px;">Tags bitte mit <SPAN STYLE="font-weight:bold;">Komma</SPAN> trennen</SPAN>
 <? if (count($p->getTags()) > 0) : ?>

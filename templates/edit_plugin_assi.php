@@ -3,7 +3,7 @@
 var charslimitation = 500;
 
 var updateCharsLeft = function() {
-	$j('#chars_left').text(charslimitation - document.plugin.short_description.value.length);
+    $j('#chars_left').text(charslimitation - document.plugin.short_description.value.length);
         if (document.plugin.short_description.value.length > charslimitation) {
                 $('chars_left').style.color = 'red';
         } else {
@@ -20,44 +20,29 @@ var checkInputLength = function() {
         }
 }
 
-
-tinyMCE.init({
-	mode : "textareas",
-	theme : "advanced",
-	editor_selector : "mceAdvanced",
-	theme_advanced_toolbar_location : "top",
-	theme_advanced_toolbar_align : "left",
-	plugins : "safari,pagebreak,style,layer,table,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template",
-	theme_advanced_buttons1 : "bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,|,styleselect,formatselect,fontselect,fontsizeselect",
-	theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,cleanup,help,code,|,insertdate,inserttime,preview,|,forecolor,backcolor",
-	theme_advanced_buttons3 : "tablecontrols,|,hr,removeformat,visualaid,|,sub,sup,|,charmap,emotions,iespell,media,advhr,|,print,|,ltr,rtl,|,fullscreen",
-	cleanup_on_startup : true,
-        invalid_elements : "script"
-});
-
 var checkInput = function(part) {
-	if (part == '1') {
-		if ($('titel').value == '' || $('license').value == '') {
-	                alert('Bitte füllen Sie alle Pflichtfelder aus!');
-        	        return false;
-		} else {
-			return true;
-		}
-	} else if (part == '2') {
-		if (jQuery(':hidden[class="sel_categories"]').length == 0) {
-			alert('Bitte füllen Sie alle Pflichtfelder aus!');
-			return false;
-		} else {
-			return true;
-		}
-	} else if (part == '3') {
-		if ($('short_description').value == '') {
-			alert('Bitte füllen Sie alle Pflichtfelder aus!');
-			return false;
-		} else {
-			return checkInputLength();
-		}
-	} 
+    if (part == '1') {
+        if ($('titel').value == '' || $('license').value == '') {
+                    alert('Bitte füllen Sie alle Pflichtfelder aus!');
+                    return false;
+        } else {
+            return true;
+        }
+    } else if (part == '2') {
+        if (jQuery(':hidden[class="sel_categories"]').length == 0) {
+            alert('Bitte füllen Sie alle Pflichtfelder aus!');
+            return false;
+        } else {
+            return true;
+        }
+    } else if (part == '3') {
+        if ($('short_description').value == '') {
+            alert('Bitte füllen Sie alle Pflichtfelder aus!');
+            return false;
+        } else {
+            return checkInputLength();
+        }
+    } 
 }
 
 var getAvailableCategories = function() {
@@ -72,20 +57,20 @@ var getAvailableCategories = function() {
 }
 
 var removeCategory = function(cid) {
-	$j('#c_'+cid).hide().remove();
-	$j('#ca_'+cid).fadeIn()
+    $j('#c_'+cid).hide().remove();
+    $j('#ca_'+cid).fadeIn()
 }
 
 var addCategory = function(cid) {
-	$j('#ca_'+cid).hide();
-	$j.ajax({
-		url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_category_item&category_id='+cid,
-		cache: false,
-		dataType: 'html',
-		success: function(data) {
-			$j(data).appendTo('#current_categories');
-		}
-	});
+    $j('#ca_'+cid).hide();
+    $j.ajax({
+        url: '<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=get_category_item&category_id='+cid,
+        cache: false,
+        dataType: 'html',
+        success: function(data) {
+            $j(data).appendTo('#current_categories');
+        }
+    });
 }
 </script>
 
@@ -185,18 +170,18 @@ var addCategory = function(cid) {
   <TR>
     <TD COLSPAN=2>
       <DIV CLASS="topic">Tags:</DIV>
-	<INPUT TYPE="text" ID="tagsautocomplete" NAME="tags" VALUE="<?=htmlReady($tags)?>" MAXLENGTH="255" STYLE="width:500px;">
+    <INPUT TYPE="text" ID="tagsautocomplete" NAME="tags" VALUE="<?=htmlReady($tags)?>" MAXLENGTH="255" STYLE="width:500px;">
         <div id="tagsautocomplete_choices" class="tagsautocomplete"></div>
         <BR><SPAN STYLE="font-size:10px;">Tags bitte mit <SPAN STYLE="font-weight:bold;">Komma</SPAN> trennen</SPAN>
     </TD>
   </TR>
 <script type="text/javascript">
 $j(window).load(function () {
-	getAvailableCategories();
-	new Ajax.Autocompleter("tagsautocomplete", "tagsautocomplete_choices", "<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=tag_completer", {
-	        paramName: "value",
-        	minChars: 2
-	});
+    getAvailableCategories();
+    new Ajax.Autocompleter("tagsautocomplete", "tagsautocomplete_choices", "<?=$GLOBALS['BASE_URI']?>ajax_dispatcher.php?ajaxcmd=tag_completer", {
+            paramName: "value",
+            minChars: 2
+    });
 });
 </script>
   <TR>
@@ -228,7 +213,7 @@ $j(window).load(function () {
   </TR>
 <script type="text/javascript">
 $j(window).load(function () {
-	updateCharsLeft();
+    updateCharsLeft();
 });
 </script>
   <TR>
