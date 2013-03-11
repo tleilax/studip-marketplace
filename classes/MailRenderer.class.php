@@ -114,10 +114,9 @@ class MailRenderer {
 		$recipient = $p->getAuthor();
 		$subject = htmlReady($question_type)." zum Plugin ".htmlReady($p->getName());
 		$footer = "\n\n-- \r\nDies ist eine Nachricht aus dem Stud.IP Plugin-Marktplatz (".$GLOBALS['BASE_URI']."). Sie können direkt darauf antworten.";
-		$header = "From: ". ($users_name ? $users_name : 'Unknown') . " <" . $email . ">\r\n"; //optional headerfields
+		$header = sprintf('From: "%s" <%s>' . "\r\n",  $users_name ?: 'Unknown', $email); //optional headerfields
+#		echo '<pre>';var_dump($recipient, $header, $footer, $subject);die;
 		mail($recipient['email'], $subject, $question.$footer, $header);
 	}
 	
 }
-
-?>

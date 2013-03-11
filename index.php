@@ -562,7 +562,7 @@ if ($USER) {
     if ($dispatch == 'send_question') {
         include_once 'lib/captcha/securimage.php';
         $securimage = new Securimage();
-        if ($securimage->check($_REQUEST['captcha_code']) == false && !($user = $GLOBALS['AUTH']->getAuthenticatedUser())) {
+        if ($securimage->check($_REQUEST['captcha_code']) == false && !$GLOBALS['AUTH']->getAuthenticatedUser()) {
             setMessage('error','Der Sicherheitscode war nicht korrekt!');
             $plugin_id = Request::option('plugin_id');
             $p = new Plugin();
@@ -700,4 +700,4 @@ if (!$dispatch) {
 
 
 include_once 'templates/footer.php';
-?>
+
