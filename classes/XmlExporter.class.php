@@ -1,7 +1,8 @@
 <?php
 /**
-* @author               Jan Kulmann <jankul@zmml.uni-bremen.de>
-*/
+ * @author Jan Kulmann <jankul@zmml.uni-bremen.de>
+ * @author Jan-Hendrik Willms <tleilax+studip@gmail.com>
+ */
 
 // +---------------------------------------------------------------------------+
 // Copyright (C) 2012 Jan Kulmann <jankul@zmml.uni-bremen.de>
@@ -22,47 +23,56 @@
 
 class XmlExporter
 {
-	private function __construct()
-	{
-		
-	}
-	
-	public static function generatePluginsXml()
-	{
-		$doc = new DomDocument('1.0');
-		$plugins = $doc->appendChild($doc->createElement('plugins'));
-	
-		$rr = DBManager::get()->query("SELECT plugin_id FROM plugins WHERE approved=1 ORDER BY mkdate DESC")->fetchAll();
-		foreach($rr as $r)
-		{
-			$p = new Plugin();
-			$p->load($r['plugin_id']);
-			
-			$releases = $p->getReleases();
-			
-			if($releases !== false)
-			{
-				$s = $p->getTitleScreen();
-				$plugin = $plugins->appendChild($doc->createElement('plugin'));
-				$plugin->setAttribute('name', rawurlencode($p->getName()));
-				$plugin->setAttribute('homepage', rawurlencode($p->getUrl()));
-				$plugin->setAttribute('description', $p->getDescription());
-				if ($s)
-					$plugin->setAttribute('image', $GLOBALS['BASE_URI'].'?dispatch=download&file_id='.$s->getFileId());
-				$plugin->setAttribute('score', 'TODO');
-				
-				foreach($releases as $rel)
-				{
-					$release = $plugin->appendChild($doc->createElement('release'));
-					$release->setAttribute('version', $rel->getVersion());
-					$release->setAttribute('studipMinVersion', $rel->getStudipMinVersion());
-					$release->setAttribute('studipMaxVersion', $rel->getStudipMaxVersion());
-					$release->setAttribute('url', $GLOBALS['BASE_URI'].'?dispatch=download&file_id='.$rel->getFileId());
-				}
-			}
-		}
-		
-		return $doc->saveXML();
-	}
+    private function __construct()
+    {
+
+    }
+
+    public static function generatePluginsXml()
+    {
+        $doc = new DomDocument('1.0');
+        $plugins = $doc->appendChild($doc->createElement('plugins'));
+
+        $query = "SELECT plugin_id
+                  FROM plugins
+                  WHERE approved = 1
+                  ORDER BY mkdate DESC";
+
+        $plugin_ids = DBManager::get()->query($query)->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($plugin_ids as $id) {
+            $p = new Plugin();
+            $p->load($id);
+
+            $releases = $p->getReleases();
+
+            if($releases !== false) {
+                $plugin = $plugins->appendChild($doc->createElement('plugin'));
+                $plugin->setAttribute('name', rawurlencode($p->getName()));
+                $plugin->setAttribute('homepage', rawurlencode($p->getUrl()));
+                $plugin->setAttribute('description', self::xmlReady($p->getDescription()));
+                if ($s = $p->getTitleScreen()) {
+                    $plugin->setAttribute('image', $GLOBALS['BASE_URI'] . '?dispatch=download&file_id=' . $s->getFileId());
+                }
+                $plugin->setAttribute('score', 'TODO');
+
+                foreach ($releases as $rel) {
+                    $release = $plugin->appendChild($doc->createElement('release'));
+                    $release->setAttribute('version', $rel->getVersion());
+                    $release->setAttribute('studipMinVersion', $rel->getStudipMinVersion());
+                    $release->setAttribute('studipMaxVersion', $rel->getStudipMaxVersion());
+                    $release->setAttribute('url', $GLOBALS['BASE_URI'] . '?dispatch=download&file_id=' . $rel->getFileId());
+                }
+            }
+        }
+
+        return $doc->saveXML();
+    }
+    
+    protected static function xmlReady($string)
+    {
+        if (!mb_detect_encoding($string, 'utf-8')) {
+            $string = mb_convert_encoding($string, 'utf-8');
+        }
+        return $string;
+    }
 }
-?>
