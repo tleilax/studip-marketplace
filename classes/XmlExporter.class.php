@@ -21,6 +21,30 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // +---------------------------------------------------------------------------+
 
+if(!function_exists('mb_detect_encoding')) {
+    function mb_detect_encoding ($string, $enc = null) {
+        static $list = array('utf-8', 'iso-8859-1', 'windows-1251');
+        foreach ($list as $item) {
+            $sample = iconv($item, $item, $string);
+            if (md5($sample) == md5($string)) {
+                if ($enc == $item) {
+                    return true;
+                } else {
+                    return $item;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+if(!function_exists('mb_convert_encoding')) {
+    function mb_convert_encoding($string, $target_encoding, $source_encoding) {
+        $string = iconv($source_encoding, $target_encoding, $string);
+        return $string;
+    }
+}
+
 class XmlExporter
 {
     private function __construct()
@@ -70,6 +94,9 @@ class XmlExporter
     
     protected static function xmlReady($string)
     {
+        if (!mb_detect_encoding($string, 'utf-8')) {
+            $string = mb_convert_encoding($string, 'utf-8');
+        }
         return $string;
     }
 }
