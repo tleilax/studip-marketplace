@@ -21,28 +21,31 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // +---------------------------------------------------------------------------+
 
-if(!function_exists('mb_detect_encoding')) {
-    function mb_detect_encoding ($string, $enc = null) {
-        static $list = array('utf-8', 'iso-8859-1', 'windows-1251');
-        foreach ($list as $item) {
-            $sample = iconv($item, $item, $string);
-            if (md5($sample) == md5($string)) {
-                if ($enc == $item) {
-                    return true;
-                } else {
-                    return $item;
-                }
+// http://www.php.net/manual/de/function.mb-detect-encoding.php#85294
+function is_utf8($str) {
+    $c=0; $b=0;
+    $bits=0;
+    $len=strlen($str);
+    for($i=0; $i<$len; $i++){
+        $c=ord($str[$i]);
+        if($c > 128){
+            if(($c >= 254)) return false;
+            elseif($c >= 252) $bits=6;
+            elseif($c >= 248) $bits=5;
+            elseif($c >= 240) $bits=4;
+            elseif($c >= 224) $bits=3;
+            elseif($c >= 192) $bits=2;
+            else return false;
+            if(($i+$bits) > $len) return false;
+            while($bits > 1){
+                $i++;
+                $b=ord($str[$i]);
+                if($b < 128 || $b > 191) return false;
+                $bits--;
             }
         }
-        return null;
     }
-}
-
-if(!function_exists('mb_convert_encoding')) {
-    function mb_convert_encoding($string, $target_encoding, $source_encoding) {
-        $string = iconv($source_encoding, $target_encoding, $string);
-        return $string;
-    }
+    return true;
 }
 
 class XmlExporter
@@ -94,8 +97,8 @@ class XmlExporter
     
     protected static function xmlReady($string)
     {
-        if (!mb_detect_encoding($string, 'utf-8')) {
-            $string = mb_convert_encoding($string, 'utf-8');
+        if (!is_utf8($string)) {
+            $string = utf8_encode($string);
         }
         return $string;
     }
