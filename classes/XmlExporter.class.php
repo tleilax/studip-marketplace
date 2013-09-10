@@ -70,9 +70,6 @@ class XmlExporter
     
     protected static function xmlReady($string)
     {
-        if (!mb_detect_encoding($string, 'utf-8')) {
-            $string = mb_convert_encoding($string, 'utf-8');
-        }
         return $string;
     }
 }
