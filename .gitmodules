@@ -1,0 +1,6 @@
+[submodule "vendor/html-to-markdown"]
+	path = vendor/html-to-markdown
+	url = git@github.com:nickcernis/html-to-markdown.git
+[submodule "vendor/htmlpurifier"]
+	path = vendor/htmlpurifier
+	url = git@github.com:ezyang/htmlpurifier.git

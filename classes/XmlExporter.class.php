@@ -48,6 +48,10 @@ function is_utf8($str) {
     return true;
 }
 
+require 'vendor/html-to-markdown/HTML_To_Markdown.php';
+require 'vendor/htmlpurifier/library/HTMLPurifier.auto.php';
+require 'vendor/htmlfixer.class.php';
+
 class XmlExporter
 {
     private function __construct()
@@ -94,12 +98,27 @@ class XmlExporter
 
         return $doc->saveXML();
     }
-    
+
     protected static function xmlReady($string)
     {
         if (!is_utf8($string)) {
             $string = utf8_encode($string);
         }
+
+        $purifier = new HTMLPurifier(HTMLPurifier_Config::createDefault());
+        $string = $purifier->purify($string);
+
+        $fixer = new HtmlFixer();
+        $string = $fixer->getFixedHtml($string);
+        
+        $markdown = new HTML_To_Markdown();
+        $markdown->set_option('strip_tags', true);
+        $string = $markdown->convert($string);
+
+        $string = preg_replace('/\[(\w+:\/\/.*?)\/?\]\(\\1\/?\s+"(.*?)"\)/isxm', '$2: $1', $string);
+        $string = preg_replace('/\[(\w+:\/\/.*?)\/?\]\(\\1\/?\)/isxm', '$1', $string);
+        $string = preg_replace('/\[(.*?)\]\((\w+:\/\/.*?)\)/', '$1: $2', $string);
+
         return $string;
     }
 }
