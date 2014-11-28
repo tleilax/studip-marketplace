@@ -162,7 +162,7 @@ class MPDBM {
                 $rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND p.classification IN ('firstclass','secondclass') ORDER BY p.classification, p.mkdate DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
                 break;
             case 'latest':
-                $rr = $db->query(sprintf("SELECT p.* FROM plugins p WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) ORDER BY p.mkdate DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
+                $rr = $db->query(sprintf("SELECT p.* FROM plugins p JOIN releases r USING(plugin_id) WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) GROUP BY p.plugin_id ORDER BY MAX(r.mkdate) DESC, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
                 break;
             case 'most_downloaded':
                 $rr = $db->query(sprintf("SELECT p.plugin_id, p.name, SUM(r.downloads) rel_downloads FROM plugins p, releases r WHERE (p.approved=1 OR (p.approved=0 AND 1=%d)) AND r.plugin_id=p.plugin_id GROUP BY p.plugin_id ORDER BY 3, p.name",($this->authenticated ? 1 : 0)))->fetchAll();
