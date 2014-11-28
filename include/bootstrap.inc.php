@@ -33,7 +33,7 @@ require_once dirname(__FILE__).'/../classes/Session.class.php';
 require_once dirname(__FILE__).'/language.inc.php';
 
 $SUPPORT_ADDRESS = 'tleilax+marketplace@gmail.com';
-$SERVER_NAME = 'plugins.studip.de';
+$SERVER_NAME = $_SERVER['SERVER_NAME']; //'plugins.studip.de';
 $REFRESH = 0; // Minuten
 Session::get()->startSession();
 if (!$_SESSION['msg_type'])

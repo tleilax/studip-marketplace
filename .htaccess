@@ -1,3 +1,8 @@
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteRule ^plugin-wiki\.php$ /index.php?dispatch=xml [L]
+</IfModule>
+
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresByType image/png "access plus 1 month"
